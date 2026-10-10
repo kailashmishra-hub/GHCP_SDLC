@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
+import tempfile
 from typing import Any
 
 from ai_sdlc.config import AppConfig
@@ -9,31 +12,46 @@ from ai_sdlc.config import AppConfig
 class LLMClient:
     def __init__(self, config: AppConfig):
         self.config = config
-        self._chat_model = None
-        if config.openai_api_key:
-            try:
-                from langchain_openai import ChatOpenAI
-
-                self._chat_model = ChatOpenAI(
-                    model=config.openai_model,
-                    api_key=config.openai_api_key,
-                    temperature=0.2,
-                )
-            except Exception:
-                self._chat_model = None
+        self._copilot = shutil.which("copilot")
 
     @property
     def enabled(self) -> bool:
-        return self._chat_model is not None
+        return self._copilot is not None
 
     def invoke_text(self, system: str, user: str) -> str | None:
-        if not self._chat_model:
+        if not self._copilot:
             return None
+        prompt = (
+            f"System instructions:\n{system.strip()}\n\n"
+            f"User request:\n{user.strip()}\n\n"
+            "Return only the requested artifact content. Do not ask follow-up questions."
+        )
         try:
-            response = self._chat_model.invoke([("system", system), ("user", user)])
-            return str(response.content)
+            response = subprocess.run(
+                [
+                    self._copilot,
+                    "--no-color",
+                    "--no-ask-user",
+                    "--no-custom-instructions",
+                    "--deny-tool=shell",
+                    "--deny-tool=write",
+                    "--deny-tool=read",
+                    "--deny-tool=url",
+                ],
+                cwd=tempfile.gettempdir(),
+                input=prompt,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=self.config.ghcp_timeout_seconds,
+                check=False,
+            )
         except Exception:
             return None
+        if response.returncode != 0 or not response.stdout.strip():
+            return None
+        return response.stdout.strip()
 
     def invoke_json(self, system: str, user: str) -> dict[str, Any] | None:
         text = self.invoke_text(system, user)

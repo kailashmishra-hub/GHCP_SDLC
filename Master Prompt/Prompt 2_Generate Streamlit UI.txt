@@ -3,8 +3,7 @@ Generate a modern Streamlit UI for the AI SDLC Platform.
 Requirements:
 
 Sidebar:
-- OpenAI API Key
-- AstraDB Configuration
+- GitHub Copilot CLI status
 
 Main Area:
 

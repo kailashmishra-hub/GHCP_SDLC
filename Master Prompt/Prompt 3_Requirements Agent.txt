@@ -19,7 +19,7 @@ Generate:
 7. Constraints
 8. API Requirements
 
-Use LangChain and OpenAI.
+Use GitHub Copilot CLI as the generation engine.
 
 Return structured JSON.
 

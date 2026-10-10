@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -14,7 +15,6 @@ from typing import Any
 
 import streamlit as st
 from dotenv import load_dotenv
-from openai import OpenAI
 
 
 load_dotenv()
@@ -58,31 +58,47 @@ def secret_or_env(name: str, default: str = "") -> str:
     return str(value or os.getenv(name, default))
 
 
-def configured_openai_key() -> str:
-    return str(st.session_state.get("openai_api_key", "") or secret_or_env("OPENAI_API_KEY"))
-
-
-def get_openai_client() -> OpenAI:
-    api_key = configured_openai_key()
-    if not api_key:
-        raise RuntimeError("OpenAI API key is required to generate artifacts.")
-    return OpenAI(api_key=api_key)
-
-
-def model_name() -> str:
-    return secret_or_env("OPENAI_MODEL", "gpt-4o-mini")
-
-
 def call_text(system: str, user: str) -> str:
-    client = get_openai_client()
-    response = client.chat.completions.create(
-        model=model_name(),
-        temperature=0.2,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+    copilot = shutil.which("copilot")
+    if not copilot:
+        raise RuntimeError(
+            "GitHub Copilot CLI was not found. Install it with 'npm install -g @github/copilot' "
+            "and authenticate with 'copilot login'."
+        )
+    prompt = (
+        f"System instructions:\n{system.strip()}\n\n"
+        f"User request:\n{user.strip()}\n\n"
+        "Return only the requested artifact content. Do not ask follow-up questions."
     )
-    content = response.choices[0].message.content or ""
+    try:
+        response = subprocess.run(
+            [
+                copilot,
+                "--no-color",
+                "--no-ask-user",
+                "--no-custom-instructions",
+                "--deny-tool=shell",
+                "--deny-tool=write",
+                "--deny-tool=read",
+                "--deny-tool=url",
+            ],
+            cwd=tempfile.gettempdir(),
+            input=prompt,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=int(secret_or_env("GHCP_TIMEOUT_SECONDS", "180")),
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("GitHub Copilot did not respond before the timeout.") from exc
+    if response.returncode != 0:
+        detail = response.stderr.strip() or response.stdout.strip() or "Unknown GitHub Copilot CLI error."
+        raise RuntimeError(detail)
+    content = response.stdout or ""
     if not content.strip():
-        raise RuntimeError("OpenAI returned an empty response.")
+        raise RuntimeError("GitHub Copilot returned an empty response.")
     return content.strip()
 
 
@@ -98,9 +114,9 @@ def call_json(system: str, user: str) -> dict[str, Any]:
     try:
         parsed = json.loads(cleaned)
     except json.JSONDecodeError as exc:
-        raise RuntimeError(f"OpenAI did not return valid JSON: {exc}") from exc
+        raise RuntimeError(f"GitHub Copilot did not return valid JSON: {exc}") from exc
     if not isinstance(parsed, dict):
-        raise RuntimeError("OpenAI JSON response must be an object.")
+        raise RuntimeError("GitHub Copilot JSON response must be an object.")
     return parsed
 
 
@@ -2698,19 +2714,16 @@ def render_app_header() -> None:
 def main() -> None:
     init_state()
     sync_current_stage_status()
-    st.title("AI SDLC Platform")
+    st.title("AI SDLC Platform - GHCP")
     render_app_header()
 
-    if not secret_or_env("OPENAI_API_KEY"):
-        st.session_state.openai_api_key = st.text_input(
-            "OpenAI API Key",
-            type="password",
-            value=st.session_state.get("openai_api_key", ""),
-            placeholder="Enter your key to generate artifacts",
-            help="Thanks for entering your OpenAI API key. Please proceed on generating the artifacts.",
+    if shutil.which("copilot"):
+        st.success("GitHub Copilot CLI detected. Please proceed with generating the artifacts.")
+    else:
+        st.warning(
+            "GitHub Copilot CLI is not installed or not available on PATH. Install it with "
+            "`npm install -g @github/copilot`, then run `copilot login` before generating artifacts."
         )
-        if st.session_state.get("openai_api_key", "").strip():
-            st.success("Thanks for entering your OpenAI API key. Please proceed on generating the artifacts.")
 
     metrics_container = st.container()
 

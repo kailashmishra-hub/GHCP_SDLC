@@ -10,8 +10,7 @@ class AppConfig:
     technology_stack: str
     automation_framework: str
     output_directory: Path
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
+    ghcp_timeout_seconds: int = 180
     astra_endpoint: str = ""
     astra_token: str = ""
     astra_collection: str = "ai_sdlc_documents"

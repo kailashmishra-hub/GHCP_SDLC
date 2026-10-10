@@ -1,11 +1,26 @@
-# AI SDLC Streamlit App
+# AI SDLC Platform - GHCP
 
-This project is a Streamlit-only AI SDLC generator. Users provide their own OpenAI API key in the UI at runtime; no OpenAI API key needs to be stored in GitHub or Streamlit Cloud secrets.
+This project is a Streamlit AI SDLC generator powered by GitHub Copilot CLI instead of direct OpenAI API calls. It converts requirement documents into SDLC artifacts such as acceptance criteria, BDD scenarios, source code, test cases, and automation scripts.
+
+The app keeps the human-in-the-loop workflow from the original AI SDLC project: users can review each stage, add feedback or additional instructions, regenerate outputs, and carry those decisions forward through Streamlit session state.
+
+## Prerequisites
+
+- Python 3.10+
+- Node.js and npm
+- GitHub Copilot CLI authenticated on the machine running the app
+
+Install and authenticate GitHub Copilot CLI:
+
+```powershell
+npm install -g @github/copilot
+copilot login
+```
 
 ## Run locally
 
 ```powershell
-cd C:\Users\Kailash\OneDrive\Documents\AI_SDLC
+cd C:\Users\Kailash\OneDrive\Documents\AI_SDLC\GHCP_SDLC
 pip install -r requirements.txt
 streamlit run app.py
 ```
@@ -16,28 +31,18 @@ Open:
 http://localhost:8501
 ```
 
-## API Key
+## Configuration
 
-For local personal use, you may create a `.env` file or set environment variables:
+The app does not require an OpenAI API key. It invokes the local `copilot` CLI in non-interactive mode.
 
-```text
-OPENAI_API_KEY=your_openai_api_key_here
-OPENAI_MODEL=gpt-4o-mini
-```
-
-For deployed use, do not store an API key if each user should pay with their own key. The app will show a password input when no key is configured.
-
-The app does not use fallback/sample generation. If no API key is provided or a model response is invalid, generation stops with an error.
-
-## Deploy to Streamlit Community Cloud
-
-1. Push this repository to GitHub.
-2. Go to Streamlit Community Cloud.
-3. Create a new app from the GitHub repository.
-4. Set the main file path to:
+Optional `.env` setting:
 
 ```text
-app.py
+GHCP_TIMEOUT_SECONDS=180
 ```
 
-5. Leave Streamlit secrets empty if users will enter their own OpenAI API key.
+## Deploy Notes
+
+This app depends on the GitHub Copilot CLI being installed and authenticated in the runtime environment. It is best suited for local execution or an environment where Copilot CLI authentication is supported.
+
+For Streamlit Community Cloud, verify whether your target runtime can install and authenticate the Copilot CLI before deploying.

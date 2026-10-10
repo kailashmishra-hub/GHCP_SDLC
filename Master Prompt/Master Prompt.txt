@@ -1,6 +1,6 @@
 You are a Senior AI Solutions Architect.
 
-Build a hackathon-ready AI SDLC Platform using Python, Streamlit, LangGraph, OpenAI GPT models, and ChromaDB.
+Build a hackathon-ready AI SDLC Platform using Python, Streamlit, and GitHub Copilot CLI as the generation engine.
 
 =================================
 USER CONFIGURATION REQUIREMENTS
@@ -60,12 +60,11 @@ SYSTEM WORKFLOW
 
 1. Upload Documents
 2. Extract Content
-3. Store in Vector DB
-4. Run Requirement Agent
-5. Run BA Agent
-6. Run BDD Agent
-7. Run Developer Agent
-8. Run Test Case Agent
-9. Run Automation Agent
-10. Generate Framework
-11. Save all outputs to the project directory
+3. Run Requirement Agent
+4. Run BA Agent
+5. Run BDD Agent
+6. Run Developer Agent
+7. Run Test Case Agent
+8. Run Automation Agent
+9. Generate Framework
+10. Save all outputs to the project directory
