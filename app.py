@@ -16,6 +16,8 @@ from typing import Any
 import streamlit as st
 from dotenv import load_dotenv
 
+from copilot_service import generate_copilot_text
+
 
 load_dotenv()
 st.set_page_config(page_title="AI SDLC Platform", page_icon="AI", layout="wide")
@@ -58,18 +60,39 @@ def secret_or_env(name: str, default: str = "") -> str:
     return str(value or os.getenv(name, default))
 
 
-def call_text(system: str, user: str) -> str:
-    copilot = shutil.which("copilot")
-    if not copilot:
-        raise RuntimeError(
-            "GitHub Copilot CLI was not found. Install it with 'npm install -g @github/copilot' "
-            "and authenticate with 'copilot login'."
-        )
-    prompt = (
+def configured_copilot_token() -> str:
+    for name in ("COPILOT_GITHUB_TOKEN", "GHCP_SDK_KEY", "GHCP_TOKEN", "SECRET_KEY"):
+        value = secret_or_env(name)
+        if value.strip():
+            return value.strip()
+    return ""
+
+
+def copilot_prompt(system: str, user: str) -> str:
+    return (
         f"System instructions:\n{system.strip()}\n\n"
         f"User request:\n{user.strip()}\n\n"
         "Return only the requested artifact content. Do not ask follow-up questions."
     )
+
+
+def call_text(system: str, user: str) -> str:
+    prompt = copilot_prompt(system, user)
+    token = configured_copilot_token()
+    if token:
+        return generate_copilot_text(
+            prompt,
+            token,
+            int(secret_or_env("GHCP_TIMEOUT_SECONDS", "180")),
+        )
+
+    copilot = shutil.which("copilot")
+    if not copilot:
+        raise RuntimeError(
+            "GitHub Copilot token is not configured in Streamlit Secrets and the local Copilot CLI "
+            "was not found. Add SECRET_KEY or COPILOT_GITHUB_TOKEN in Streamlit Cloud, or install "
+            "the local CLI with 'npm install -g @github/copilot' and authenticate with 'copilot login'."
+        )
     try:
         response = subprocess.run(
             [
@@ -2717,12 +2740,15 @@ def main() -> None:
     st.title("AI SDLC Platform - GHCP")
     render_app_header()
 
-    if shutil.which("copilot"):
+    if configured_copilot_token():
+        st.success("GitHub Copilot SDK token detected from Streamlit Secrets. Please proceed with generating the artifacts.")
+    elif shutil.which("copilot"):
         st.success("GitHub Copilot CLI detected. Please proceed with generating the artifacts.")
     else:
         st.warning(
-            "GitHub Copilot CLI is not installed or not available on PATH. Install it with "
-            "`npm install -g @github/copilot`, then run `copilot login` before generating artifacts."
+            "GitHub Copilot is not configured. Add `SECRET_KEY` or `COPILOT_GITHUB_TOKEN` in "
+            "Streamlit Secrets, or install the local CLI with `npm install -g @github/copilot` "
+            "and run `copilot login`."
         )
 
     metrics_container = st.container()

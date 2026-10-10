@@ -10,6 +10,7 @@ class AppConfig:
     technology_stack: str
     automation_framework: str
     output_directory: Path
+    copilot_github_token: str = ""
     ghcp_timeout_seconds: int = 180
     astra_endpoint: str = ""
     astra_token: str = ""

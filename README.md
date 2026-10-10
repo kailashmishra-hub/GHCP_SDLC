@@ -1,16 +1,16 @@
 # AI SDLC Platform - GHCP
 
-This project is a Streamlit AI SDLC generator powered by GitHub Copilot CLI instead of direct OpenAI API calls. It converts requirement documents into SDLC artifacts such as acceptance criteria, BDD scenarios, source code, test cases, and automation scripts.
+This project is a Streamlit AI SDLC generator powered by GitHub Copilot through the Copilot SDK or local Copilot CLI instead of direct OpenAI API calls. It converts requirement documents into SDLC artifacts such as acceptance criteria, BDD scenarios, source code, test cases, and automation scripts.
 
 The app keeps the human-in-the-loop workflow from the original AI SDLC project: users can review each stage, add feedback or additional instructions, regenerate outputs, and carry those decisions forward through Streamlit session state.
 
 ## Prerequisites
 
 - Python 3.10+
-- Node.js and npm
-- GitHub Copilot CLI authenticated on the machine running the app
+- A GitHub token for an account with GitHub Copilot access
+- Optional for local-only use: Node.js, npm, and GitHub Copilot CLI
 
-Install and authenticate GitHub Copilot CLI:
+Optional local CLI fallback:
 
 ```powershell
 npm install -g @github/copilot
@@ -33,16 +33,37 @@ http://localhost:8501
 
 ## Configuration
 
-The app does not require an OpenAI API key. It invokes the local `copilot` CLI in non-interactive mode.
+The app does not require an OpenAI API key.
+
+For Streamlit Community Cloud, open **App settings > Secrets** and add either:
+
+```toml
+SECRET_KEY = "github_pat_your_copilot_enabled_token"
+```
+
+or:
+
+```toml
+COPILOT_GITHUB_TOKEN = "github_pat_your_copilot_enabled_token"
+```
 
 Optional `.env` setting:
 
 ```text
+SECRET_KEY=github_pat_your_copilot_enabled_token
 GHCP_TIMEOUT_SECONDS=180
 ```
 
+The app checks secrets in this order:
+
+1. `COPILOT_GITHUB_TOKEN`
+2. `GHCP_SDK_KEY`
+3. `GHCP_TOKEN`
+4. `SECRET_KEY`
+5. Local `copilot` CLI fallback
+
 ## Deploy Notes
 
-This app depends on the GitHub Copilot CLI being installed and authenticated in the runtime environment. It is best suited for local execution or an environment where Copilot CLI authentication is supported.
+On Streamlit Community Cloud, use the SDK secret-based path. The first Copilot SDK request can take longer while the SDK runtime initializes.
 
-For Streamlit Community Cloud, verify whether your target runtime can install and authenticate the Copilot CLI before deploying.
+For local execution, you can either use the same secret in `.env` or install and authenticate the local Copilot CLI.

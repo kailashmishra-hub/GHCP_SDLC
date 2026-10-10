@@ -1,31 +1,45 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
 from typing import Any
 
 from ai_sdlc.config import AppConfig
+from copilot_service import generate_copilot_text
 
 
 class LLMClient:
     def __init__(self, config: AppConfig):
         self.config = config
         self._copilot = shutil.which("copilot")
+        self._token = (
+            config.copilot_github_token
+            or os.getenv("COPILOT_GITHUB_TOKEN", "")
+            or os.getenv("GHCP_SDK_KEY", "")
+            or os.getenv("GHCP_TOKEN", "")
+            or os.getenv("SECRET_KEY", "")
+        ).strip()
 
     @property
     def enabled(self) -> bool:
-        return self._copilot is not None
+        return bool(self._token or self._copilot)
 
     def invoke_text(self, system: str, user: str) -> str | None:
-        if not self._copilot:
-            return None
         prompt = (
             f"System instructions:\n{system.strip()}\n\n"
             f"User request:\n{user.strip()}\n\n"
             "Return only the requested artifact content. Do not ask follow-up questions."
         )
+        if self._token:
+            try:
+                return generate_copilot_text(prompt, self._token, self.config.ghcp_timeout_seconds)
+            except Exception:
+                return None
+        if not self._copilot:
+            return None
         try:
             response = subprocess.run(
                 [
