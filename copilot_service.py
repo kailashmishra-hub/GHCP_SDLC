@@ -33,11 +33,8 @@ async def _generate_with_sdk(prompt: str, github_token: str, timeout_seconds: in
     runtime_directory = Path(tempfile.gettempdir()) / "ghcp-sdlc-copilot-runtime"
     runtime_directory.mkdir(parents=True, exist_ok=True)
     os.environ["COPILOT_GITHUB_TOKEN"] = github_token
-    client = CopilotClient(
-        mode="empty",
-        base_directory=str(runtime_directory),
-        use_logged_in_user=False,
-    )
+    os.environ["COPILOT_BASE_DIRECTORY"] = str(runtime_directory)
+    client = CopilotClient()
     session = None
     try:
         await client.start()
