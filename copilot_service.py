@@ -34,12 +34,10 @@ async def _generate_with_sdk(prompt: str, github_token: str, timeout_seconds: in
     runtime_directory.mkdir(parents=True, exist_ok=True)
     os.environ["COPILOT_GITHUB_TOKEN"] = github_token
     client = CopilotClient(
-        {
-            "mode": "empty",
-            "base_directory": str(runtime_directory),
-            "github_token": github_token,
-            "use_logged_in_user": False,
-        }
+        mode="empty",
+        base_directory=str(runtime_directory),
+        github_token=github_token,
+        use_logged_in_user=False,
     )
     session = None
     try:
