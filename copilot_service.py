@@ -36,7 +36,6 @@ async def _generate_with_sdk(prompt: str, github_token: str, timeout_seconds: in
     client = CopilotClient(
         mode="empty",
         base_directory=str(runtime_directory),
-        github_token=github_token,
         use_logged_in_user=False,
     )
     session = None
