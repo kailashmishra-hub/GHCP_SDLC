@@ -21,6 +21,15 @@ def _validate_token(token: str) -> None:
         )
 
 
+def _copilot_auth_hint() -> str:
+    return (
+        "GitHub Copilot authorization failed. If you are using a fine-grained PAT, create it "
+        "from your personal GitHub account, make sure that account has active Copilot access, "
+        "and grant the token the 'Copilot Requests' account permission. Then set it as "
+        "COPILOT_GITHUB_TOKEN in Streamlit Secrets and reboot the app."
+    )
+
+
 async def _generate_with_sdk(prompt: str, github_token: str, timeout_seconds: int) -> str:
     try:
         from copilot import CopilotClient
@@ -58,4 +67,17 @@ def generate_copilot_text(prompt: str, github_token: str, timeout_seconds: int =
     if not token:
         raise RuntimeError("GitHub Copilot token is not configured in Streamlit Secrets.")
     _validate_token(token)
-    return asyncio.run(_generate_with_sdk(prompt, token, timeout_seconds))
+    try:
+        return asyncio.run(_generate_with_sdk(prompt, token, timeout_seconds))
+    except Exception as exc:
+        message = str(exc)
+        auth_markers = (
+            "Authorization error",
+            "credentials may be expired or invalid",
+            "No GitHub OAuth token or Copilot HMAC key provided",
+            "Bad credentials",
+            "Not authenticated",
+        )
+        if any(marker in message for marker in auth_markers):
+            raise RuntimeError(f"{_copilot_auth_hint()} Original error: {message}") from exc
+        raise

@@ -7,7 +7,7 @@ The app keeps the human-in-the-loop workflow from the original AI SDLC project: 
 ## Prerequisites
 
 - Python 3.10+
-- A GitHub token for an account with GitHub Copilot access
+- A GitHub token for a personal account with GitHub Copilot access
 - Optional for local-only use: Node.js, npm, and GitHub Copilot CLI
 
 Optional local CLI fallback:
@@ -46,6 +46,8 @@ or:
 ```toml
 COPILOT_GITHUB_TOKEN = "github_pat_your_copilot_enabled_token"
 ```
+
+For a `github_pat_...` fine-grained PAT, create it under the personal GitHub account that has Copilot access and grant the **Copilot Requests** account permission. A token can start with `github_pat_` and still fail if this permission or Copilot entitlement is missing.
 
 Optional `.env` setting:
 
